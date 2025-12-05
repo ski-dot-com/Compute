@@ -4,6 +4,8 @@
   "description": "Qiitaの記事のためだけに作られた、インタプリタ・トランスパイラ両対応の自作言語",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "start": "npm run build & node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,5 +20,8 @@
   "homepage": "https://github.com/ski-dot-com/Compute#readme",
   "dependencies": {
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1"
   }
 }
