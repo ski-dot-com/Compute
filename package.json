@@ -1,0 +1,22 @@
+{
+  "name": "compute",
+  "version": "1.0.0",
+  "description": "Qiitaの記事のためだけに作られた、インタプリタ・トランスパイラ両対応の自作言語",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ski-dot-com/Compute.git"
+  },
+  "author": "ski.com",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/ski-dot-com/Compute/issues"
+  },
+  "homepage": "https://github.com/ski-dot-com/Compute#readme",
+  "dependencies": {
+    "typescript": "^5.9.3"
+  }
+}
