@@ -1,3 +1,4 @@
-export default function tokenize(code:string):string{
-    
+export type Token = string
+export default function tokenize(code:string):Token[]{
+    let tokens=code
 }
