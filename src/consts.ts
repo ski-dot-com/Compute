@@ -127,4 +127,10 @@ export const operator_proiorities = [
         is_right: false
     },
 ] as const satisfies OperatorProiority[]
-export const signs = operator_proiorities.flatMap(pri=>pri.operators.flatMap(oper=>oper.pattern.flatMap()))
+export const signs = new Set([
+    ...operator_proiorities.flatMap(pri=>pri.operators.flatMap(oper=>oper.pattern.filter(x=>x.type=="sign").flatMap(x=>x.sign))),
+    ...[
+        "(",
+        ")",
+    ] as const
+])
