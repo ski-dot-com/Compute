@@ -172,6 +172,9 @@ export function raise(err:Error):never{
 function check<S,T extends S>(l:S,r:T):l is T{
 	return l===r
 }
+function getTypeOf<ID extends OperID>(v:OperTypeOf<ID>):OperTypeTypeOf<ID>{
+	return v.type
+}
 function popArgs<ID extends OperID, Exp>(id:ID, exps:Exp[]):ArgTypeOf<ID, Exp>{
 	const target_oper:OperTypeOf<ID>=opers.filter<OperTypeOf<ID>>((x=>x.id==id) as (value:OperType)=>value is OperTypeOf<ID>)[0] ?? raise(new Error("IDがみつかりませんでした。"))
 	const target_type:OperTypeTypeOf<ID>=target_oper.type
