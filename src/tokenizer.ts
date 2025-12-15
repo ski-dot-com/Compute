@@ -1,4 +1,7 @@
-import { signs } from "./consts"
+import { signs } from "./common";
+/**
+ * トークンの型
+ */
 export type Token = string
 export default function tokenize(code:string):Token[]{
 	let tokens=code.split(/\s/g).map(x=>"?"+x)

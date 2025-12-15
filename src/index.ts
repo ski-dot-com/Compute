@@ -6,13 +6,18 @@ var reader = readline.createInterface({
 	output: process.stdout
 });
 
-async function main(){
+async function test_tokenizer(){
 	reader.on("SIGINT", ()=>{
 		process.exit()
 	})
 	while(true){
 		console.log(tokenize(await reader.question("> ")))
 	}
+}
+
+function main(){
+    // test_tokenizer()
+    
 }
 
 main()

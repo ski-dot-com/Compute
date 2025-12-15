@@ -66,6 +66,24 @@ export const operator_proiorities = [
 	{
 		operators:[
 			{
+				id: "pri",
+				type: "value",
+				pattern:[{
+					type: "sign",
+					sign: "("
+				},{
+					type: "exp"
+				},{
+					type: "sign",
+					sign: ")"
+				}]
+			},
+		],
+		is_right: false
+	},
+	{
+		operators:[
+			{
 				id: "neg",
 				type: "chain",
 				pattern:[{
@@ -129,8 +147,33 @@ export const operator_proiorities = [
 ] as const satisfies OperatorProiority[]
 export const signs = [...new Set([
 	...operator_proiorities.flatMap(pri=>pri.operators.flatMap(oper=>oper.pattern.filter(x=>x.type=="sign").flatMap(x=>x.sign))),
-	...[
-		"(",
-		")",
-	] as const
 ])]
+type OperType=(typeof operator_proiorities)[number]["operators"][number]
+export const opers = operator_proiorities.flatMap(x=>x.operators as OperType[])
+export const oper_ids = opers.map(x=>x.id)
+export type OperID = OperType["id"]
+type OperTypeOf<ID extends OperID> = (OperType&{id: ID})
+type OperTypeTypeOf<ID extends OperID> = OperTypeOf<ID>["type"]
+type ArgTypeMain<Pattern extends PatternItem[], Exp> = Pattern extends [infer Head, ...infer Tail]?(
+	Head extends PatternItem?(
+		Tail extends PatternItem[]?(
+			Head["type"] extends "exp"?[Exp, ...ArgTypeMain<Tail,Exp>]:ArgTypeMain<Tail,Exp>
+		):never
+	):never
+):[];
+export type ChainPartOf<ID extends OperID, Exp = {}> = OperTypeTypeOf<ID> extends "chain"?[Exp]:[]
+export type ArgTypeOf<ID extends OperID, Exp = {}> = [...(ChainPartOf<ID, Exp>), ...ArgTypeMain<OperTypeOf<ID>["pattern"], Exp>]
+declare const a :ArgTypeOf<"add",number>
+
+declare function popPattern<ID extends OperID, Exp>(id:ID, exps:Exp[]):ArgTypeMain<OperTypeOf<ID>["pattern"], Exp>
+export function raise(err:Error):never{
+	throw err;
+}
+function check<S,T extends S>(l:S,r:T):l is T{
+	return l===r
+}
+function popArgs<ID extends OperID, Exp>(id:ID, exps:Exp[]):ArgTypeOf<ID, Exp>{
+	const target_oper:OperTypeOf<ID>=opers.filter<OperTypeOf<ID>>((x=>x.id==id) as (value:OperType)=>value is OperTypeOf<ID>)[0] ?? raise(new Error("IDがみつかりませんでした。"))
+	const target_type:OperTypeTypeOf<ID>=target_oper.type
+	let chain_part:ChainPartOf<ID, Exp>
+}
