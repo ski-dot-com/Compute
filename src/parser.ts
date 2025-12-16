@@ -2,7 +2,7 @@ import { type Token, is_sign, get_sign, is_number, get_number } from "./tokenize
 import { type OpersItemType, type OperType, type OperID, type ArgTypeOf, type PatternItem, operator_proiorities, signs, opers, popArgs, raise, InternalError, pri_ids, Sign, apply_to_each_pattern } from "./common";
 
 
-type AST = ({
+export type AST = ({
     [K in OperID]: {
         id: K,
         args: ArgTypeOf<K, AST>
