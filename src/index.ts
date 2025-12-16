@@ -1,4 +1,5 @@
 import { parse } from "./parser";
+import { evaluate } from "./runtime";
 import tokenize from "./tokenizer"
 process.stdin.setEncoding("utf8");
 import * as readline from "node:readline/promises";
@@ -29,9 +30,19 @@ async function test_parser(){
 	}
 }
 
-function main(){
+async function main(){
     // test_tokenizer()
-    test_parser()
+    // test_parser()
+	reader.on("SIGINT", ()=>{
+		process.exit()
+	})
+	while(true){
+		try{
+			console.log(evaluate(parse(tokenize(await reader.question("> ")))))
+		}catch(e){
+			console.error(e)
+		}
+	}
 }
 
 main()

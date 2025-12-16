@@ -71,10 +71,10 @@ function group_with_sign(opers: OperType[]) {
 }
 const sign_start_opers = group_with_sign(opers.filter(v => !is_exp_start(v)))
 const exp_start_opers = group_with_sign(opers.filter(v => is_exp_start(v)))
-console.log(JSON.stringify({
-    value_start_opers: Object.fromEntries(sign_start_opers.entries()),
-    exp_start_opers: Object.fromEntries(exp_start_opers.entries())
-}, undefined, 4))
+// console.log(JSON.stringify({
+//     value_start_opers: Object.fromEntries(sign_start_opers.entries()),
+//     exp_start_opers: Object.fromEntries(exp_start_opers.entries())
+// }, undefined, 4))
 type ParseState = {
     head: number,
     exps: AST[],
@@ -112,7 +112,7 @@ function check_oper(opers: Oper2Parse[], exps: AST[]){
     }
 }
 export function parse(tokens: Token[]) {
-    console.log(tokens)
+    // console.log(tokens)
     let cur_state: ParseState = {
         head: 0,
         exps: [],
@@ -136,11 +136,11 @@ export function parse(tokens: Token[]) {
         [()=>(backtrack(new SyntaxError("最後に式が必要です。"), len_tokens), true),()=>false, ()=>(backtrack(new SyntaxError(`最後に"${(cur_state.opers.at(-1)!.rest_items[0]as PatternItem&{type:"sign"}).sign}"が必要です。`), len_tokens), true)][cur_state.state]!()
     )) {
         const token = tokens[head]!;
-        console.log(JSON.stringify({
-            cur_state,
-            alt_states,
-            token,
-        },undefined,4))
+        // console.log(JSON.stringify({
+        //     cur_state,
+        //     alt_states,
+        //     token,
+        // },undefined,4))
         switch (cur_state.state) {
             case 0:
                 {
@@ -261,10 +261,10 @@ export function parse(tokens: Token[]) {
         }
         cur_state.head++;
     }
-    console.log(JSON.stringify({
-        cur_state,
-        alt_states,
-    },undefined,4))
+    // console.log(JSON.stringify({
+    //     cur_state,
+    //     alt_states,
+    // },undefined,4))
     {
         const exps = cur_state.exps;
         while(cur_state.opers.length){
