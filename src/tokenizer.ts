@@ -1,8 +1,10 @@
-import { signs } from "./common";
+import { signs, type Sign } from "./common";
 /**
  * トークンの型
  */
 export type Token = string
+export type SignToken = string
+export type NumberToken = string
 export default function tokenize(code:string):Token[]{
 	let tokens=code.split(/\s/g).map(x=>"?"+x)
 	tokens=signs.reduce((tokens,sign)=>
@@ -23,4 +25,16 @@ export default function tokenize(code:string):Token[]{
 		tokens.push(token)
 	}
 	return tokens
+}
+export function is_sign(token:Token): token is SignToken {
+	return token[0]=="*"
+}
+export function get_sign(token:SignToken): Sign {
+	return token.slice(1,) as Sign
+}
+export function is_number(token:Token): token is NumberToken {
+	return token[0]=="#"
+}
+export function get_number(token:NumberToken): number {
+	return +token.slice(1,)
 }

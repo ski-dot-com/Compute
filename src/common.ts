@@ -20,7 +20,7 @@ export type PatternItem = {
 	 * 両側演算子(前と後ろに式が現れる演算子)の端の項でしか意味がなく、しかも、無結合演算子には効かない上、右結合の場合は後置単項演算子、左結合演算子の場合は前置単項演算子にも効かない。
 	 * 省略した場合は、自分の一つ上の優先順位。
 	 */
-	limit?: string
+	limit?: PriID
 }
 
 /**
@@ -54,7 +54,7 @@ export type OperatorProiority = {
 	/**
 	 * この優先順位のID。省略した場合はなし。
 	 */
-	id?: string,
+	id: string,
 	/**
 	 * 前置/右結合演算子にするかどうか。
 	 * 同じ優先順位の中で、前置/右結合演算子と後置/左結合演算子を同居させることはできない。
@@ -64,6 +64,7 @@ export type OperatorProiority = {
 
 export const operator_proiorities = [
 	{
+		id: "atom",
 		operators:[
 			{
 				id: "pri",
@@ -82,6 +83,7 @@ export const operator_proiorities = [
 		is_right: false
 	},
 	{
+		id: "ari_pref",
 		operators:[
 			{
 				id: "neg",
@@ -95,6 +97,7 @@ export const operator_proiorities = [
 		is_right: true
 	},
 	{
+		id: "term",
 		operators:[
 			{
 				id: "mul",
@@ -120,6 +123,7 @@ export const operator_proiorities = [
 		is_right: false
 	},
 	{
+		id: "ari",
 		operators:[
 			{
 				id: "add",
@@ -148,8 +152,13 @@ export const operator_proiorities = [
 export const signs = [...new Set([
 	...operator_proiorities.flatMap(pri=>pri.operators.flatMap(oper=>oper.pattern.filter(x=>x.type=="sign").flatMap(x=>x.sign))),
 ])]
-type OperType=(typeof operator_proiorities)[number]["operators"][number]
-export const opers = operator_proiorities.flatMap(x=>x.operators as OperType[])
+export const pri_ids = operator_proiorities.map(x=>x.id)
+export type PriID=typeof pri_ids[number]
+// type OperType=(typeof operator_proiorities)[number]["operators"][number]
+export const opers = operator_proiorities.flatMap((x,priority)=>x.operators.map(y=>({...y, priority, is_right:x.is_right}))) 
+export type OperType = NonNullable<typeof opers[number]>
+export type OpersItemType = Operator&{priority:number, is_right:boolean}
+// const a_:OpersItemType=opers[0]!
 export const oper_ids = opers.map(x=>x.id)
 export type OperID = OperType["id"]
 type OperTypeOf<ID extends OperID> = (OperType&{id: ID})
@@ -163,20 +172,45 @@ type ArgTypeMain<Pattern extends PatternItem[], Exp> = Pattern extends [infer He
 ):[];
 export type ChainPartOf<ID extends OperID, Exp = {}> = OperTypeTypeOf<ID> extends "chain"?[Exp]:[]
 export type ArgTypeOf<ID extends OperID, Exp = {}> = [...(ChainPartOf<ID, Exp>), ...ArgTypeMain<OperTypeOf<ID>["pattern"], Exp>]
-declare const a :ArgTypeOf<"add",number>
+// declare const a :ArgTypeOf<"add",number>
 
-declare function popPattern<ID extends OperID, Exp>(id:ID, exps:Exp[]):ArgTypeMain<OperTypeOf<ID>["pattern"], Exp>
-export function raise(err:Error):never{
+export function raise(err?:Error):never{
 	throw err;
 }
-function check<S,T extends S>(l:S,r:T):l is T{
-	return l===r
+
+export class SyntaxError extends Error {
+	constructor(...args:ConstructorParameters<ErrorConstructor>){
+		super(...args)
+		this.name="SyntaxError"
+	}
 }
-function getTypeOf<ID extends OperID>(v:OperTypeOf<ID>):OperTypeTypeOf<ID>{
-	return v.type
+
+export class InternalError extends Error {
+	constructor(...args:ConstructorParameters<ErrorConstructor>){
+		super(...args)
+		this.name="InternalError"
+	}
 }
-function popArgs<ID extends OperID, Exp>(id:ID, exps:Exp[]):ArgTypeOf<ID, Exp>{
-	const target_oper:OperTypeOf<ID>=opers.filter<OperTypeOf<ID>>((x=>x.id==id) as (value:OperType)=>value is OperTypeOf<ID>)[0] ?? raise(new Error("IDがみつかりませんでした。"))
-	const target_type:OperTypeTypeOf<ID>=target_oper.type
-	let chain_part:ChainPartOf<ID, Exp>
+
+// function check<S,T extends S>(l:S,r:T):l is T{
+// 	return l===r
+// }
+// function getTypeOf<ID extends OperID>(v:OperTypeOf<ID>):OperTypeTypeOf<ID>{
+// 	return v.type
+// }
+export function popArgs<ID extends OperID, Exp>(id:ID, exps:Exp[]):ArgTypeOf<ID, Exp>{
+	const target_oper:OperTypeOf<ID>=opers.filter<OperTypeOf<ID>>((x=>x.id==id) as (value:OperType)=>value is OperTypeOf<ID>)[0] ?? raise(new InternalError("IDがみつかりませんでした。"))
+	return [...(target_oper.type=="chain"?[exps.pop()??raise(new InternalError("式が足りませんでした。"))]:[]), ...target_oper.pattern.filter(v=>v.type=="exp").map(_=>exps.pop()??raise(new InternalError("式が足りませんでした。")))].reverse() as ArgTypeOf<ID, Exp>
 }
+export type Sign=NonNullable<(typeof signs)[0]>
+
+// type ReturnTypeWith<T extends (..._:Args)=>any, Args extends any[]> = T extends (..._:Args)=> infer R?R:never
+
+// declare const a:ReturnTypeWith<typeof popArgs, ["pri",{}[]]>
+
+export function apply_to_each_pattern<A extends string | number | symbol, M extends {[K in A]: any}>(){
+	return function res<F extends <K extends A>(k:K)=>M[K]>(f:F){
+		return f as ({[K in A]: (f:(k:K)=>M[K])=>void}[A] extends ((k: infer I)=> void)?I:never)
+	}
+}
+// apply_to_each_pattern<"a"|"b",{"a":["a","c"], "b": ["b", "d"]}>()(0 as any)("a")
