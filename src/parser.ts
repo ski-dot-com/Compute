@@ -15,13 +15,32 @@ export type AST = ({
 }
 
 type Oper2Parse = {
+    /**
+     * この演算子のID。
+     */
     id: OperID,
+    /**
+     * この後くるべき要素の配列。先頭の式は除く。
+     */
     rest_items: PatternItem[],
+    /**
+     * 子の式がとして許容する演算子の最低の優先順位。値が小さい方が優先順位が大きいので気をつけること。
+     */
     priority: number | null
 }
+/**
+ * この演算子が作る式が式から始まるかを返す。
+ * @param v 調べる演算子
+ * @returns この演算子が作る式が式から始まるか。
+ */
 function is_exp_start(v: OpersItemType) {
     return v.type == "chain" && ((!v.is_right) || v.pattern[0]?.type == "exp")
 }
+/**
+ * この演算子が作る式が式で終わるかを返す。
+ * @param v 調べる演算子
+ * @returns この演算子が作る式が式で終わるか。
+ */
 function is_exp_end(v: OpersItemType) {
     return v.type == "chain" && ((v.is_right) || v.pattern.at(-1)?.type == "exp")
 }
@@ -75,7 +94,7 @@ const exp_start_opers = group_with_sign(opers.filter(v => is_exp_start(v)))
 //     value_start_opers: Object.fromEntries(sign_start_opers.entries()),
 //     exp_start_opers: Object.fromEntries(exp_start_opers.entries())
 // }, undefined, 4))
-type ParseState = {
+type ParseEnvironment = {
     head: number,
     exps: AST[],
     opers: Oper2Parse[],
@@ -86,6 +105,11 @@ type ParseState = {
      */
     state: 0 | 1 | 2
 }
+/**
+ * 末尾の演算子を取り出し、それが作る式を式スタックに入れる。
+ * @param opers 現在の環境の演算子スタック
+ * @param exps 現在の環境の式スタック
+ */
 function push_exp(opers: Oper2Parse[], exps: AST[]){
     const id = opers.pop()!.id;
     exps.push({
@@ -94,8 +118,15 @@ function push_exp(opers: Oper2Parse[], exps: AST[]){
         args: popArgs(id, exps) as any
     })
 }
+/**
+ * 演算子が記号を受け取り、rest_itemsから記号が取り除かれた後に演算子に対して行うべき操作を行う。
+ * @param opers 現在の環境の演算子スタック
+ * @param exps 現在の環境の式スタック
+ * @returns 移行するべき状態
+ */
 function check_oper(opers: Oper2Parse[], exps: AST[]){
     const oper = opers.at(-1)!, rest_items=oper.rest_items
+    
     if (rest_items.length) {
         const head_item=rest_items[0]!
         if (head_item?.type === "sign") {
@@ -113,13 +144,13 @@ function check_oper(opers: Oper2Parse[], exps: AST[]){
 }
 export function parse(tokens: Token[]) {
     // console.log(tokens)
-    let cur_state: ParseState = {
+    let cur_environment: ParseEnvironment = {
         head: 0,
         exps: [],
         opers: [],
         state: 0,
     };
-    let alt_states: ParseState[] = []
+    let alt_environments: ParseEnvironment[] = []
     let cur_error: Error | undefined, cur_at = -1, cur_priority = 0;
     function backtrack(error: Error, at: number, priority: number = 0) {
         if ((cur_at - at || cur_priority - priority) < 0) {
@@ -128,12 +159,12 @@ export function parse(tokens: Token[]) {
             cur_at = at;
             cur_priority = priority;
         }
-        cur_state = alt_states.shift() ?? raise(cur_error)
+        cur_environment = alt_environments.shift() ?? raise(cur_error)
     }
     const len_tokens = tokens.length
     let head: number
-    while ((head = cur_state.head) !== len_tokens || (
-        [()=>(backtrack(new SyntaxError("最後に式が必要です。"), len_tokens), true),()=>false, ()=>(backtrack(new SyntaxError(`最後に"${(cur_state.opers.at(-1)!.rest_items[0]as PatternItem&{type:"sign"}).sign}"が必要です。`), len_tokens), true)][cur_state.state]!()
+    while ((head = cur_environment.head) !== len_tokens || (
+        [()=>(backtrack(new SyntaxError("最後に式が必要です。"), len_tokens), true),()=>false, ()=>(backtrack(new SyntaxError(`最後に"${(cur_environment.opers.at(-1)!.rest_items[0]as PatternItem&{type:"sign"}).sign}"が必要です。`), len_tokens), true)][cur_environment.state]!()
     )) {
         const token = tokens[head]!;
         // console.log(JSON.stringify({
@@ -141,7 +172,7 @@ export function parse(tokens: Token[]) {
         //     alt_states,
         //     token,
         // },undefined,4))
-        switch (cur_state.state) {
+        switch (cur_environment.state) {
             case 0:
                 {
                     if (is_sign(token)) {
@@ -156,28 +187,28 @@ export function parse(tokens: Token[]) {
                             continue
                         }
                         {
-                            let tmp: ParseState | undefined, tmp_: ParseState[]
-                            [tmp, ...tmp_] = opers.map(get_oper2parse).map<ParseState>(v =>  {
+                            let tmp: ParseEnvironment | undefined, tmp_: ParseEnvironment[]
+                            [tmp, ...tmp_] = opers.map(get_oper2parse).map<ParseEnvironment>(v =>  {
                                 const is_0 = v.rest_items.at(0)?.type !== "sign"
                                 if(is_0)v.rest_items.shift()
                                 return {
                                     head: head + 1,
-                                    exps: [...cur_state.exps],
-                                    opers: [...cur_state.opers, v],
+                                    exps: [...cur_environment.exps],
+                                    opers: [...cur_environment.opers, v],
                                     state: is_0 ? 0 : 2
                                 }
                             })
-                            cur_state = tmp!
-                            alt_states.unshift(...tmp_)
+                            cur_environment = tmp!
+                            alt_environments.unshift(...tmp_)
                         }
                         continue
                     }
                     if (is_number(token)) {
-                        cur_state.exps.push({
+                        cur_environment.exps.push({
                             type: "number",
                             value: get_number(token)
                         })
-                        cur_state.state=1
+                        cur_environment.state=1
                     }
                 }
                 break;
@@ -188,22 +219,22 @@ export function parse(tokens: Token[]) {
                         continue
                     }
                     const sign = get_sign(token)
-                    const req_oper_id = cur_state.opers.findLastIndex(v => v.rest_items.length)
+                    const req_oper_id = cur_environment.opers.findLastIndex(v => v.rest_items.length)
                     let oper:Oper2Parse|undefined=(()=>{
                         if (req_oper_id !== -1) {
-                            const req_oper = cur_state.opers[req_oper_id]!, req_sign = req_oper.rest_items[0]!
+                            const req_oper = cur_environment.opers[req_oper_id]!, req_sign = req_oper.rest_items[0]!
                             if (req_sign.type == "exp") {
                                 throw new InternalError("式が2個連続する演算子が見つかりました。")
                             }
                             if (sign == req_sign.sign) {
-                                const times = cur_state.opers.length - req_oper_id - 1
+                                const times = cur_environment.opers.length - req_oper_id - 1
                                 
                                 for (let i = 0; i < times; i++) {
-                                    push_exp(cur_state.opers, cur_state.exps)
+                                    push_exp(cur_environment.opers, cur_environment.exps)
                                 }
                                 let res = req_oper
                                 res.rest_items.shift()
-                                cur_state.head++;
+                                cur_environment.head++;
                                 return res
                             }
                         }
@@ -221,13 +252,13 @@ export function parse(tokens: Token[]) {
                             continue
                         }
                         {
-                            let tmp: ParseState | undefined, tmp_: ParseState[]
-                            [tmp, ...tmp_] = opers.map<ParseState>(i =>  {
+                            let tmp: ParseEnvironment | undefined, tmp_: ParseEnvironment[]
+                            [tmp, ...tmp_] = opers.map<ParseEnvironment>(i =>  {
                                 const v = get_oper2parse(i)
                                 const is_0 = v.rest_items.at(0)?.type !== "sign"
                                 if(is_0)v.rest_items.shift()
-                                const opers = [...cur_state.opers]
-                                const exps = [...cur_state.exps]
+                                const opers = [...cur_environment.opers]
+                                const exps = [...cur_environment.exps]
                                 let oper: Oper2Parse|undefined, pri:number|null|undefined
                                 while ((pri=(oper = opers.at(-1))?.priority)!=undefined&&pri<i.priority) {
                                     push_exp(opers, exps)
@@ -240,35 +271,35 @@ export function parse(tokens: Token[]) {
                                     state: is_0 ? 0 : 2
                                 }
                             })
-                            cur_state = tmp!
-                            alt_states.unshift(...tmp_)
-                            oper=cur_state.opers.at(-1)!
+                            cur_environment = tmp!
+                            alt_environments.unshift(...tmp_)
+                            oper=cur_environment.opers.at(-1)!
                         }
                     }
-                    cur_state.state=check_oper(cur_state.opers, cur_state.exps)
+                    cur_environment.state=check_oper(cur_environment.opers, cur_environment.exps)
                     continue
                 }
             case 2:
                 {
                     let sign:Sign
-                    const req_oper = cur_state.opers.at(-1)!, req_sign = (req_oper.rest_items[0] as PatternItem & {type: "sign"}).sign
+                    const req_oper = cur_environment.opers.at(-1)!, req_sign = (req_oper.rest_items[0] as PatternItem & {type: "sign"}).sign
                     if (!is_sign(token)||(sign=get_sign(token))!==req_sign) {
                         backtrack(new SyntaxError(`${req_sign}が必要です`), head);
                         continue
                     }
-                    cur_state.state=check_oper(cur_state.opers, cur_state.exps)
+                    cur_environment.state=check_oper(cur_environment.opers, cur_environment.exps)
                 }
         }
-        cur_state.head++;
+        cur_environment.head++;
     }
     // console.log(JSON.stringify({
     //     cur_state,
     //     alt_states,
     // },undefined,4))
     {
-        const exps = cur_state.exps;
-        while(cur_state.opers.length){
-            const oper = cur_state.opers.pop()!
+        const exps = cur_environment.exps;
+        while(cur_environment.opers.length){
+            const oper = cur_environment.opers.pop()!
             const id = oper.id;
             exps.push({
                 type: "oper",

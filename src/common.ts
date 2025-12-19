@@ -62,6 +62,10 @@ export type OperatorProiority = {
 	is_right: boolean
 }
 
+/**
+ * 優先順位の配列。
+ * 前に来るほど優先順位が高く、この配列における添字がその優先順位の値になる。
+ */
 export const operator_proiorities = [
 	{
 		id: "atom",
@@ -149,20 +153,58 @@ export const operator_proiorities = [
 		is_right: false
 	},
 ] as const satisfies OperatorProiority[]
+/**
+ * 演算子として用いられる記号の配列。
+ */
 export const signs = [...new Set([
 	...operator_proiorities.flatMap(pri=>pri.operators.flatMap(oper=>oper.pattern.filter(x=>x.type=="sign").flatMap(x=>x.sign))),
 ])]
+/**
+ * 演算子として用いられる記号の型。
+ */
+export type Sign=NonNullable<(typeof signs)[0]>
+
+/**
+ * 優先順位のIDの配列。添字nに優先順位nのIDが入っている。
+ */
 export const pri_ids = operator_proiorities.map(x=>x.id)
+/**
+ * 優先順位のIDの型。実際の値を元に決まる。
+ */
 export type PriID=typeof pri_ids[number]
 // type OperType=(typeof operator_proiorities)[number]["operators"][number]
+/**
+ * 優先順位の情報も含んだ演算子の配列。
+ */
 export const opers = operator_proiorities.flatMap((x,priority)=>x.operators.map(y=>({...y, priority, is_right:x.is_right}))) 
+/**
+ * 優先順位の情報も含んだ演算子の厳密な型。実際の値を元に決定される。
+ */
 export type OperType = NonNullable<typeof opers[number]>
+/**
+ * 優先順位の情報も含んだ演算子のゆるい型。ありえる値全てを含む型であるが、idの型がstringなので気をつけること。
+ */
 export type OpersItemType = Operator&{priority:number, is_right:boolean}
 // const a_:OpersItemType=opers[0]!
+/**
+ * 演算子のIDの配列。
+ */
 export const oper_ids = opers.map(x=>x.id)
+/**
+ * 演算子のIDの型。実際の値を元に決まる。
+ */
 export type OperID = OperType["id"]
+/**
+ * idがIDである優先順位の情報も含んだ演算子の厳密な型。実際の値を元に決まる。
+ */
 type OperTypeOf<ID extends OperID> = (OperType&{id: ID})
+/**
+ * idがIDである優先順位の情報も含んだ演算子のtypeプロパティの厳密な型。実際の値を元に決まる。
+ */
 type OperTypeTypeOf<ID extends OperID> = OperTypeOf<ID>["type"]
+/**
+ * 
+ */
 type ArgTypeMain<Pattern extends PatternItem[], Exp> = Pattern extends [infer Head, ...infer Tail]?(
 	Head extends PatternItem?(
 		Tail extends PatternItem[]?(
@@ -202,7 +244,6 @@ export function popArgs<ID extends OperID, Exp>(id:ID, exps:Exp[]):ArgTypeOf<ID,
 	const target_oper:OperTypeOf<ID>=opers.filter<OperTypeOf<ID>>((x=>x.id==id) as (value:OperType)=>value is OperTypeOf<ID>)[0] ?? raise(new InternalError("IDがみつかりませんでした。"))
 	return [...(target_oper.type=="chain"?[exps.pop()??raise(new InternalError("式が足りませんでした。"))]:[]), ...target_oper.pattern.filter(v=>v.type=="exp").map(_=>exps.pop()??raise(new InternalError("式が足りませんでした。")))].reverse() as ArgTypeOf<ID, Exp>
 }
-export type Sign=NonNullable<(typeof signs)[0]>
 
 // type ReturnTypeWith<T extends (..._:Args)=>any, Args extends any[]> = T extends (..._:Args)=> infer R?R:never
 
