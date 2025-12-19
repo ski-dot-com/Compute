@@ -202,9 +202,6 @@ type OperTypeOf<ID extends OperID> = (OperType&{id: ID})
  * idがIDである優先順位の情報も含んだ演算子のtypeプロパティの厳密な型。実際の値を元に決まる。
  */
 type OperTypeTypeOf<ID extends OperID> = OperTypeOf<ID>["type"]
-/**
- * 
- */
 type ArgTypeMain<Pattern extends PatternItem[], Exp> = Pattern extends [infer Head, ...infer Tail]?(
 	Head extends PatternItem?(
 		Tail extends PatternItem[]?(
@@ -213,20 +210,31 @@ type ArgTypeMain<Pattern extends PatternItem[], Exp> = Pattern extends [infer He
 	):never
 ):[];
 export type ChainPartOf<ID extends OperID, Exp = {}> = OperTypeTypeOf<ID> extends "chain"?[Exp]:[]
+/**
+ * ある演算子の引数の配列の厳密な型。
+ */
 export type ArgTypeOf<ID extends OperID, Exp = {}> = [...(ChainPartOf<ID, Exp>), ...ArgTypeMain<OperTypeOf<ID>["pattern"], Exp>]
 // declare const a :ArgTypeOf<"add",number>
 
+/**
+ * エラーを投げるだけの関数。throwの式版。
+ * @param err 投げるエラー
+ */
 export function raise(err?:Error):never{
 	throw err;
 }
-
+/**
+ * 文法関係のエラー
+ */
 export class SyntaxError extends Error {
 	constructor(...args:ConstructorParameters<ErrorConstructor>){
 		super(...args)
 		this.name="SyntaxError"
 	}
 }
-
+/**
+ * 内部エラー。あり得ないことが起こった時用。
+ */
 export class InternalError extends Error {
 	constructor(...args:ConstructorParameters<ErrorConstructor>){
 		super(...args)
@@ -240,18 +248,14 @@ export class InternalError extends Error {
 // function getTypeOf<ID extends OperID>(v:OperTypeOf<ID>):OperTypeTypeOf<ID>{
 // 	return v.type
 // }
+/**
+ * 各演算子に必要な引数を式スタックから取り出して、それを配列にして返す関数。
+ * @param id 演算子のID
+ * @param exps 引数を取り出す式スタック
+ * @returns 取り出した引数配列
+ */
 export function popArgs<ID extends OperID, Exp>(id:ID, exps:Exp[]):ArgTypeOf<ID, Exp>{
 	const target_oper:OperTypeOf<ID>=opers.filter<OperTypeOf<ID>>((x=>x.id==id) as (value:OperType)=>value is OperTypeOf<ID>)[0] ?? raise(new InternalError("IDがみつかりませんでした。"))
 	return [...(target_oper.type=="chain"?[exps.pop()??raise(new InternalError("式が足りませんでした。"))]:[]), ...target_oper.pattern.filter(v=>v.type=="exp").map(_=>exps.pop()??raise(new InternalError("式が足りませんでした。")))].reverse() as ArgTypeOf<ID, Exp>
 }
 
-// type ReturnTypeWith<T extends (..._:Args)=>any, Args extends any[]> = T extends (..._:Args)=> infer R?R:never
-
-// declare const a:ReturnTypeWith<typeof popArgs, ["pri",{}[]]>
-
-export function apply_to_each_pattern<A extends string | number | symbol, M extends {[K in A]: any}>(){
-	return function res<F extends <K extends A>(k:K)=>M[K]>(f:F){
-		return f as ({[K in A]: (f:(k:K)=>M[K])=>void}[A] extends ((k: infer I)=> void)?I:never)
-	}
-}
-// apply_to_each_pattern<"a"|"b",{"a":["a","c"], "b": ["b", "d"]}>()(0 as any)("a")
