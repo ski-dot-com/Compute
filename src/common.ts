@@ -83,6 +83,103 @@ export const operator_proiorities = [
 					sign: ")"
 				}]
 			},
+			{
+				id: "lst",
+				type: "value",
+				pattern:[{
+					type: "sign",
+					sign: "["
+				},{
+					type: "exp"
+				},{
+					type: "sign",
+					sign: "]"
+				}]
+			},
+			{
+				id: "blk",
+				type: "value",
+				pattern:[{
+					type: "sign",
+					sign: "{"
+				},{
+					type: "exp"
+				},{
+					type: "sign",
+					sign: "}"
+				}]
+			},
+			{
+				id: "glb",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "#"
+				}]
+			},
+			{
+				id: "loc",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "$"
+				}]
+			},
+		],
+		is_right: true
+	},
+	{
+		id: "pri",
+		operators:[
+			{
+				id: "dot",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "."
+				},{
+					type: "exp",
+				}]
+			},
+			{
+				id: "cal",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "("
+				},{
+					type: "exp"
+				},{
+					type: "sign",
+					sign: ")"
+				}]
+			},
+			{
+				id: "ind",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "["
+				},{
+					type: "exp"
+				},{
+					type: "sign",
+					sign: "]"
+				}]
+			},
+			{
+				id: "bcl",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "{"
+				},{
+					type: "exp"
+				},{
+					type: "sign",
+					sign: "}"
+				}]
+			},
 		],
 		is_right: false
 	},
@@ -241,7 +338,6 @@ export class InternalError extends Error {
 		this.name="InternalError"
 	}
 }
-
 // function check<S,T extends S>(l:S,r:T):l is T{
 // 	return l===r
 // }

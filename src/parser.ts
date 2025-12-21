@@ -1,4 +1,4 @@
-import { type Token, is_sign, get_sign, is_number, get_number } from "./tokenizer";
+import { type Token, is_sign, get_sign, is_number, get_number, is_identifier, get_identifier } from "./tokenizer";
 import { type OpersItemType, type OperType, type OperID, type ArgTypeOf, type PatternItem, operator_proiorities, signs, opers, popArgs, raise, InternalError, pri_ids, Sign } from "./common";
 
 /**
@@ -22,13 +22,13 @@ export type AST = ({
     type: "oper",
 } | {
     /**
-     * ノードの種類を示すタグ。このノードが数値を表すことを示す。
+     * ノードの種類を示すタグ。このノードが数値か識別子を表すことを示す。
      */
-    type: "number",
+    type: "literal",
     /**
      * 実際の値。
      */
-    value: number
+    value: number|string
 }
 
 /**
@@ -270,10 +270,20 @@ export function parse(tokens: Token[]) {
                     }
                     if (is_number(token)) {
                         cur_environment.exps.push({
-                            type: "number",
+                            type: "literal",
                             value: get_number(token)
                         })
                         cur_environment.state=1
+                    }
+                    else if (is_identifier(token)) {
+                        cur_environment.exps.push({
+                            type: "literal",
+                            value: get_identifier(token)
+                        })
+                        cur_environment.state=1
+                    }
+                    else {
+                        throw new InternalError("想定外のトークンが現れました。")
                     }
                 }
                 break;
