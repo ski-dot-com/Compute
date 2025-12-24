@@ -180,12 +180,30 @@ export const operator_proiorities = [
 					sign: "}"
 				}]
 			},
+			{
+				id: "hsh",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "#"
+				},{
+					type: "exp",
+				}]
+			}
 		],
 		is_right: false
 	},
 	{
 		id: "ari_pref",
 		operators:[
+			{
+				id: "pos",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "+"
+				}]
+			},
 			{
 				id: "neg",
 				type: "chain",
@@ -249,6 +267,141 @@ export const operator_proiorities = [
 		],
 		is_right: false
 	},
+	{
+		id: "cmp",
+		operators:[
+			{
+				id: "eq",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "=="
+				},{
+					type: "exp",
+				}]
+			},
+			{
+				id: "neq",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "!="
+				},{
+					type: "exp",
+				}]
+			},
+			{
+				id: "lt",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "<"
+				},{
+					type: "exp",
+				}]
+			},
+			{
+				id: "gt",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: ">"
+				},{
+					type: "exp",
+				}]
+			},
+			{
+				id: "leq",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: "<="
+				},{
+					type: "exp",
+				}]
+			},
+			{
+				id: "geq",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: ">="
+				},{
+					type: "exp",
+				}]
+			},
+		],
+		is_right: false
+	},{
+		id: "asg",
+		operators:[
+			{
+				id: "asg",
+				type: "chain",
+				pattern:[{
+					type: "exp",
+				},{
+					type: "sign",
+					sign: "="
+				}]
+			},
+			{
+				id: "cas",
+				type: "chain",
+				pattern:[{
+					type: "exp",
+				},{
+					type: "sign",
+					sign: "$="
+				}]
+			}
+		],
+		is_right: true
+	},{
+		id: "sep",
+		operators:[
+			{
+				id: "tup",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: ","
+				},{
+					type: "exp",
+				}]
+			},{
+				id: "tup_lst",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: ","
+				}]
+			}
+		],
+		is_right: false
+	},{
+		id: "stm",
+		operators:[
+			{
+				id: "stm",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: ";"
+				},{
+					type: "exp",
+				}]
+			},{
+				id: "stm_lst",
+				type: "chain",
+				pattern:[{
+					type: "sign",
+					sign: ";"
+				}]
+			}
+		],
+		is_right: false
+	}
 ] as const satisfies OperatorProiority[]
 /**
  * 演算子として用いられる記号の配列。

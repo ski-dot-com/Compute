@@ -1,12 +1,8 @@
 import { parse } from "./parser";
 import { evaluate } from "./runtime";
 import tokenize from "./tokenizer"
-process.stdin.setEncoding("utf8");
-import * as readline from "node:readline/promises";
-var reader = readline.createInterface({
-	input: process.stdin,
-	output: process.stdout
-});
+import reader from "./reader";
+import { Environment, Scope } from "./environment";
 
 async function test_tokenizer(){
 	reader.on("SIGINT", ()=>{
@@ -36,6 +32,7 @@ async function main(){
 	reader.on("SIGINT", ()=>{
 		process.exit()
 	})
+	const environment = new Environment(new Scope())
 	while(true){
 		try{
 			console.log(evaluate(parse(tokenize(await reader.question("> ")))))

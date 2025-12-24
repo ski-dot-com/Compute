@@ -1,5 +1,5 @@
 import { type Token, is_sign, get_sign, is_number, get_number, is_identifier, get_identifier } from "./tokenizer";
-import { type OpersItemType, type OperType, type OperID, type ArgTypeOf, type PatternItem, operator_proiorities, signs, opers, popArgs, raise, InternalError, pri_ids, Sign } from "./common";
+import { type OpersItemType, type OperType, type OperID, type ArgTypeOf, type PatternItem, opers, popArgs, raise, InternalError, pri_ids, Sign } from "./common";
 
 /**
  * 抽象構文木（AST）の型。
@@ -160,8 +160,8 @@ function push_exp(opers: Oper2Parse[], exps: AST[]){
     exps.push({
         type: "oper",
         id: id,
-        args: popArgs(id, exps) as any
-    })
+        args: popArgs(id, exps)
+    } as any)
 }
 /**
  * 演算子が記号を受け取り、rest_itemsから記号が取り除かれた後に演算子に対して行うべき操作を行う。
@@ -229,11 +229,7 @@ export function parse(tokens: Token[]) {
         [()=>(backtrack(new SyntaxError("最後に式が必要です。"), len_tokens), true),()=>false, ()=>(backtrack(new SyntaxError(`最後に"${(cur_environment.opers.at(-1)!.rest_items[0]as PatternItem&{type:"sign"}).sign}"が必要です。`), len_tokens), true)][cur_environment.state]!()
     )) {
         const token = tokens[head]!;
-        // console.log(JSON.stringify({
-        //     cur_state,
-        //     alt_states,
-        //     token,
-        // },undefined,4))
+        // console.log(JSON.stringify({ cur_environment, tokens }, undefined,4));
         switch (cur_environment.state) {
             case 0: // 式の前の状態
                 {
@@ -255,6 +251,9 @@ export function parse(tokens: Token[]) {
                             let tmp: ParseEnvironment | undefined, tmp_: ParseEnvironment[]
                             [tmp, ...tmp_] = opers.map(get_oper2parse).map<ParseEnvironment>(v =>  {
                                 const is_0 = v.rest_items.at(0)?.type !== "sign"
+                                // console.log(JSON.stringify(
+                                //     {v,is_0}
+                                // ))
                                 if(is_0)v.rest_items.shift()
                                 return {
                                     head: head + 1,
@@ -310,6 +309,7 @@ export function parse(tokens: Token[]) {
                                 let res = req_oper
                                 res.rest_items.shift()
                                 cur_environment.head++;
+                                cur_environment.state=check_oper(cur_environment.opers, cur_environment.exps)
                                 return res
                             }
                         }
@@ -331,6 +331,9 @@ export function parse(tokens: Token[]) {
                             [tmp, ...tmp_] = opers.map<ParseEnvironment>(i =>  {
                                 const v = get_oper2parse(i)
                                 const is_0 = v.rest_items.at(0)?.type !== "sign"
+                                // console.log(JSON.stringify(
+                                //     {v,is_0}
+                                // ))
                                 if(is_0)v.rest_items.shift()
                                 const opers = [...cur_environment.opers]
                                 const exps = [...cur_environment.exps]
@@ -351,7 +354,6 @@ export function parse(tokens: Token[]) {
                             oper=cur_environment.opers.at(-1)!
                         }
                     }
-                    cur_environment.state=check_oper(cur_environment.opers, cur_environment.exps)
                     continue
                 }
             case 2: // 次に記号が必要な状態
@@ -380,8 +382,8 @@ export function parse(tokens: Token[]) {
             exps.push({
                 type: "oper",
                 id: id,
-                args: popArgs(id, exps) as any
-            })
+                args: popArgs(id, exps)
+            } as any)
         }
         return exps.at(-1)!
     }
